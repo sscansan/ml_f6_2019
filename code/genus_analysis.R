@@ -32,9 +32,6 @@ read_tsv("raw_data/baxter.metadata.tsv",
   mutate(srn = dx_bin == "Adv Adenoma" | dx_bin == "Cancer",
          lesion = dx_bin == "Adv Adenoma" | dx_bin == "Cancer" | dx_bin == "Adenoma")
 
-
-
-
 # join taxonomy and shared
 composite <-
 inner_join(shared, taxonomy, by = "otu") %>% 
