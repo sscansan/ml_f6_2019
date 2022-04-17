@@ -16,7 +16,7 @@ srn_genus_results <-
        method = "glmnet", 
        outcome_colname = "srn",
        kfold = 5, #k splits
-       cv_folds = 100, #ctoss validations
+       cv_times = 100, #ctoss validations
        training_frac = 0.8, # 80/20 Split
        seed = 14091989)
 
