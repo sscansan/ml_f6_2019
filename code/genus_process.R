@@ -34,7 +34,8 @@ metadata <-
   rename_all(tolower) %>% 
   rename(group = sample) %>% 
   mutate(srn = dx_bin == "Adv Adenoma" | dx_bin == "Cancer",
-         lesion = dx_bin == "Adv Adenoma" | dx_bin == "Cancer" | dx_bin == "Adenoma")
+         lesion = dx_bin == "Adv Adenoma" | dx_bin == "Cancer" | dx_bin == "Adenoma") %>%
+  mutate(site = str_replace(site, "U of Michigan", "U Michigan"))
 
 # join taxonomy and shared
 composite <-

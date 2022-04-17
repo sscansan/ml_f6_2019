@@ -61,7 +61,7 @@ composite %>%
                      labels = c("Healthy", "SRN")) +
   labs(x = "Relative abundance (%)",
        y = NULL) +
-  theme_classic() +
+  theme_bw() +
   theme(axis.text.y = element_markdown())
 
 ggsave("figures/significant_genera.png", width = 6, height = 5)
@@ -138,11 +138,9 @@ roc_data %>%
   ggplot(aes(x = 1-specificity, y= sensitivity, color = metric)) +
   geom_line() +
   geom_abline(slope = 1, intercept = 0, color = "gray75", linetype = "dashed") +
-  theme_classic() +
+  theme_bw() +
   coord_fixed()
 
 ggsave("figures/roc_figure.png", height = 4, width = 6)
-
-
 
 
