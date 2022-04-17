@@ -1,4 +1,6 @@
 library(tidyverse)
+library(broom)
+library(ggtext)
 
 # feature tab;e
 shared <- 
@@ -44,4 +46,68 @@ inner_join(shared, taxonomy, by = "otu") %>%
   inner_join(., metadata, by = "group")
 
 
+# significance
+# for the comparison of 3 or more groups use the kruskall-wallis test, for 2 groups the wilcoxon test
   
+sig_genera <-
+  composite %>%  
+  nest(data = -taxonomy) %>% 
+  mutate(test = map(.x = data, 
+                    ~ wilcox.test(rel_abund ~ srn, data = .x) %>% tidy())) %>% 
+  unnest(test) %>%
+  mutate(p.adjust = p.adjust(p.value, method = "BH")) %>% 
+  filter(p.adjust < 0.05) %>% 
+  select(taxonomy, p.adjust)
+  
+# iN CASE NEEDED, THE LIMIT OF DETECTION
+# calculate the seqs per sample and then the limit of detection (LOD)
+nseqs_per_sample <-
+  shared %>% 
+  group_by(group) %>% 
+  summarize(N = sum(count), .groups = "drop") %>% 
+  count(N) %>% # all the samples should have the same sampling depth
+  pull(N)
+
+stopifnot(length(nseqs_per_sample) == 1)
+
+lod <- 100*1/nseqs_per_sample
+# the obtained number is the lod for this dataset. 
+# One use you could do with it, is to replace the zeros with  2/3*lod, then, you can log transform the data without loosing shape of the data as it's below the lod.
+
+
+composite %>% 
+  inner_join(sig_genera, by = "taxonomy") %>% 
+  mutate(rel_abund = 100 * (rel_abund + lod/200),
+         taxonomy = str_replace(taxonomy, "(.*)", "*\\1*"),
+         taxonomy = str_replace(taxonomy, 
+                                "\\*(.*)_unclassified\\*", 
+                                "Unclassified<br>*\\1*"),
+         srn = factor(srn, levels = c(T, F))) %>% 
+  ggplot(aes(x = rel_abund, y = taxonomy, color = srn, fill = srn)) +
+  geom_vline(xintercept = lod, linetype = "dashed", color = "gray 80") +
+  geom_jitter(position = position_jitterdodge(dodge.width = 0.8,
+                                              jitter.width = 0.3), 
+              alpha = 0.75,
+              shape = 21) +
+  stat_summary(fun.data = median_hilow,
+               fun.args = list(conf.int = 0.5),
+               geom = "pointrange",
+               position = position_dodge(width = 0.8),
+               color = "black",
+               show.legend = FALSE) +
+  scale_x_log10() +
+  scale_color_manual(NULL, 
+                     breaks = c(F, T),
+                     values = c("gray", "dodgerblue"),
+                     labels = c("Healthy", "SRN")) +
+  scale_fill_manual(NULL, 
+                     breaks = c(F, T),
+                     values = c("gray", "dodgerblue"),
+                     labels = c("Healthy", "SRN")) +
+  labs(x = "Relative abundance (%)",
+       y = NULL) +
+  theme_classic() +
+  theme(axis.text.y = element_markdown())
+
+ggsave("figures/significant_genera.png", width = 5, height = 4)
+
